@@ -55,7 +55,7 @@ from strong_sort.strong_sort import StrongSORT
 
 
 def detect(save_img=False, line_thickness=1):
-    source, weights, show_vid, save_txt, imgsz, trace = opt.source, opt.yolo_weights, opt.show_vid, opt.save_txt, opt.img_size, opt.trace
+    source, weights, show_vid, save_txt, imgsz, trace, blur_classes = opt.source, opt.yolo_weights, opt.show_vid, opt.save_txt, opt.img_size, opt.trace, opt.blur_classes
     save_img = not opt.nosave and not source.endswith('.txt')  # save inference images
     webcam = source.isnumeric() or source.endswith('.txt') or source.lower().startswith(
         ('rtsp://', 'rtmp://', 'http://', 'https://'))
@@ -238,9 +238,18 @@ def detect(save_img=False, line_thickness=1):
                                 # thickness = int(np.sqrt(1000/float(i1+10))*0.3)
                                 thickness = 2
                                 try:
-                                  cv2.line(im0, trajectory[id][i1 - 1], trajectory[id][i1], (0, 0, 255), thickness)
+                                    cv2.line(im0, trajectory[id][i1 - 1], trajectory[id][i1], (0, 0, 255), thickness)
                                 except:
-                                  pass
+                                    pass
+
+                        if blur_classes and int(cls) in blur_classes:
+                            #Add Object Blurring Code
+                            #..................................................................
+                            crop_obj = im0[int(bboxes[1]):int(bboxes[3]),int(bboxes[0]):int(bboxes[2])]
+                            blur_ratio = 30
+                            blur = cv2.blur(crop_obj,(blur_ratio,blur_ratio))
+                            im0[int(bboxes[1]):int(bboxes[3]),int(bboxes[0]):int(bboxes[2])] = blur
+                            #..................................................................
 
                         if save_txt:
                             # to MOT format
@@ -355,7 +364,7 @@ if __name__ == '__main__':
     parser.add_argument('--conf-thres', type=float, default=0.25, help='object confidence threshold')
     parser.add_argument('--iou-thres', type=float, default=0.45, help='IOU threshold for NMS')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--show-vid', action='store_true',default=True, help='display results')
+    parser.add_argument('--show-vid', action='store_true',default=False, help='display results')
     parser.add_argument('--save-txt', action='store_true', help='save results to *.txt')
     parser.add_argument('--save-img', action='store_true', help='save results to *.jpg')
     parser.add_argument('--save-conf', action='store_true', help='save confidences in --save-txt labels')
@@ -374,6 +383,7 @@ if __name__ == '__main__':
     parser.add_argument('--hide-conf', default=False, action='store_true', help='hide confidences')
     parser.add_argument('--hide-class', default=False, action='store_true', help='hide IDs')
     parser.add_argument('--count', action='store_true', help='display all MOT counts results on screen')
+    parser.add_argument('--blur-classes', nargs='+', type=int, help='blur by class: --blur-classes 0, or --blur-classes 0 2 3')    
     parser.add_argument('--draw', action='store_true', help='display object trajectory lines')
     opt = parser.parse_args()
     print(opt)
